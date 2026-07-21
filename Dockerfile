@@ -1,26 +1,29 @@
-FROM ubuntu:22.04
+FROM node:20-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Install ffmpeg for video processing
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json ./
 
 # Install dependencies
-RUN apt-get update --fix-missing && apt-get install -y \
-    libssl3 \
-    libncurses6 \
-    dpkg \
-    && rm -rf /var/lib/apt/lists/*
+RUN npm install
 
-# Copy all .deb files and install script
-COPY *.deb /tmp/
-COPY install.sh /tmp/install.sh
+# Copy all source files
+COPY . .
 
-# Install Flussonic packages
-RUN cd /tmp && bash install.sh && rm -rf /tmp/*
+# Create required directories
+RUN mkdir -p uploads/videos uploads/thumbnails
 
 # Set environment
-ENV PORT=80
+ENV PORT=3000
+ENV NODE_ENV=production
 
-# Expose ports
-EXPOSE 80 1935 8080
+# Expose port
+EXPOSE 3000
 
-# Start Flussonic in foreground
-CMD ["/opt/flussonic/bin/run"]
+# Start the application
+CMD ["node", "server/index.js"]
