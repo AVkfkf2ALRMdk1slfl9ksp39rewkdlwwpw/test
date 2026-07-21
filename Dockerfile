@@ -1,11 +1,16 @@
-FROM debian:bullseye-slim
+FROM ubuntu:22.04
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    libssl1.1 \
-    libncurses5 \
+# Fix apt issues and install dependencies
+RUN apt-get update --fix-missing && apt-get install -y \
+    libssl3 \
     libncurses6 \
-    && rm -rf /var/lib/apt/lists/*
+    dpkg \
+    && rm -rf /var/lib/apt/lists/* \
+    || (apt-get update && apt-get install -y \
+    libssl3 \
+    libncurses6 \
+    dpkg \
+    && rm -rf /var/lib/apt/lists/*)
 
 # Copy all .deb files and install script
 COPY *.deb /tmp/
