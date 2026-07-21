@@ -1,16 +1,13 @@
 FROM ubuntu:22.04
 
-# Fix apt issues and install dependencies
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
 RUN apt-get update --fix-missing && apt-get install -y \
     libssl3 \
     libncurses6 \
     dpkg \
-    && rm -rf /var/lib/apt/lists/* \
-    || (apt-get update && apt-get install -y \
-    libssl3 \
-    libncurses6 \
-    dpkg \
-    && rm -rf /var/lib/apt/lists/*)
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy all .deb files and install script
 COPY *.deb /tmp/
@@ -25,5 +22,5 @@ ENV PORT=80
 # Expose ports
 EXPOSE 80 1935 8080
 
-# Start Flussonic
-CMD ["flussonic"]
+# Start Flussonic in foreground
+CMD ["/opt/flussonic/bin/run"]
