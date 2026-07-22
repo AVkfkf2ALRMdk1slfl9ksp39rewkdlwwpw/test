@@ -13,144 +13,144 @@ export function setupAPIRoutes(app) {
     res.json({
       status: 'healthy',
       uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-      version: '1.0.0'
+      version: '2.0.0',
+      platform: 'stream-hub',
+      timestamp: new Date().toISOString()
     });
   });
 
-  // Dashboard stats
-  app.get('/api/stats', (req, res) => {
+  // Dashboard overview
+  app.get('/api/dashboard', (req, res) => {
     const db = getDB();
 
+    const liveCount = db.prepare('SELECT COUNT(*) as total FROM live_streams WHERE isLive = 1').get().total;
+    const totalStreams = db.prepare('SELECT COUNT(*) as total FROM live_streams').get().total;
+    const totalVideos = db.prepare('SELECT COUNT(*) as total FROM videos').get().total;
+    const totalStorage = db.prepare('SELECT COALESCE(SUM(filesize), 0) as total FROM videos').get().total;
+    const totalViewers = db.prepare('SELECT COALESCE(SUM(viewers), 0) as total FROM live_streams WHERE isLive = 1').get().total;
+
+    const liveStreams = db.prepare('SELECT * FROM live_streams ORDER BY createdAt DESC LIMIT 10').all();
+    const recentVideos = db.prepare('SELECT * FROM videos ORDER BY createdAt DESC LIMIT 5').all();
+
+    const memory = process.memoryUsage();
+    const cpuUsage = os.loadavg();
+
+    res.json({
+      overview: {
+        liveStreams: liveCount,
+        totalStreams,
+        totalVideos,
+        totalStorage: formatBytes(totalStorage),
+        totalViewers,
+        uptime: process.uptime(),
+        cpu: cpuUsage[0],
+        memoryUsed: formatBytes(memory.heapUsed),
+        memoryTotal: formatBytes(memory.heapTotal)
+      },
+      liveStreams: liveStreams.map(s => ({
+        id: s.id, name: s.name, isLive: !!s.isLive,
+        viewers: s.viewers, bitrate: s.bitrate,
+        resolution: s.resolution, status: s.status
+      })),
+      recentVideos: recentVideos.map(v => ({
+        id: v.id, title: v.title, views: v.views,
+        resolution: v.resolution, duration: v.duration,
+        thumbnail: v.thumbnail
+      })),
+      system: {
+        os: os.platform(),
+        arch: os.arch(),
+        cpuModel: os.cpus()[0]?.model || 'Unknown',
+        totalMemory: formatBytes(os.totalmem()),
+        freeMemory: formatBytes(os.freemem()),
+        nodeVersion: process.version
+      }
+    });
+  });
+
+  // Global stats
+  app.get('/api/stats', (req, res) => {
+    const db = getDB();
     const videoCount = db.prepare('SELECT COUNT(*) as total FROM videos').get().total;
     const liveCount = db.prepare('SELECT COUNT(*) as total FROM live_streams WHERE isLive = 1').get().total;
     const totalViews = db.prepare('SELECT COALESCE(SUM(views), 0) as total FROM videos').get().total;
     const totalStorage = db.prepare('SELECT COALESCE(SUM(filesize), 0) as total FROM videos').get().total;
 
-    const recentVideos = db.prepare('SELECT * FROM videos ORDER BY createdAt DESC LIMIT 5').all();
-    const recentStreams = db.prepare('SELECT * FROM live_streams ORDER BY createdAt DESC LIMIT 5').all();
-
     res.json({
-      overview: {
-        totalVideos: videoCount,
-        liveStreams: liveCount,
-        totalViews: totalViews,
-        totalStorage: formatBytes(totalStorage)
-      },
-      recentVideos: recentVideos.map(v => ({
-        id: v.id,
-        title: v.title,
-        views: v.views,
-        thumbnail: v.thumbnail,
-        createdAt: v.createdAt
-      })),
-      recentStreams: recentStreams,
-      system: {
-        memory: {
-          used: `${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`,
-          total: `${Math.round(os.totalmem() / 1024 / 1024)} MB`
-        },
-        uptime: process.uptime(),
-        cpu: os.cpus()[0]?.model || 'Unknown'
-      }
+      totalVideos: videoCount,
+      liveStreams: liveCount,
+      totalViews,
+      totalStorage: formatBytes(totalStorage),
+      uptime: process.uptime(),
+      version: '2.0.0'
     });
   });
 
-  // Analytics
-  app.get('/api/analytics', (req, res) => {
+  // Settings
+  app.get('/api/settings', (req, res) => {
     const db = getDB();
-    const { videoId, period = '7d' } = req.query;
+    const settings = db.prepare('SELECT * FROM settings').all();
+    const result = {};
+    for (const s of settings) result[s.key] = s.value;
+    res.json({ settings: result });
+  });
 
-    if (videoId) {
-      const video = db.prepare('SELECT * FROM videos WHERE id = ?').get(videoId);
-      if (!video) return res.status(404).json({ error: 'Video not found' });
-
-      const events = db.prepare('SELECT * FROM analytics WHERE videoId = ? ORDER BY timestamp DESC LIMIT 100').all(videoId);
-      const dailyViews = db.prepare(`
-        SELECT DATE(timestamp / 1000, 'unixepoch') as date, COUNT(*) as views
-        FROM analytics WHERE videoId = ? AND timestamp > ?
-        GROUP BY date ORDER BY date
-      `).all(videoId, Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-      return res.json({ videoId, totalViews: video.views, dailyViews, recentEvents: events });
+  app.put('/api/settings', (req, res) => {
+    const db = getDB();
+    const { key, value } = req.body;
+    if (key && value !== undefined) {
+      db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, String(value));
     }
-
-    // Global analytics
-    const topVideos = db.prepare('SELECT id, title, views, thumbnail FROM videos ORDER BY views DESC LIMIT 10').all();
-    const totalViews = db.prepare('SELECT COALESCE(SUM(views), 0) as total FROM videos').get().total;
-
-    res.json({
-      totalViews,
-      topVideos: topVideos.map(v => ({ ...v, embedUrl: `/embed/${v.id}` }))
-    });
+    res.json({ success: true });
   });
 
   // Search
   app.get('/api/search', (req, res) => {
     const db = getDB();
-    const { q } = req.query;
-    if (!q) return res.json({ videos: [] });
+    const { q, type = 'all' } = req.query;
+    if (!q) return res.json({ results: [] });
 
-    const videos = db.prepare('SELECT * FROM videos WHERE title LIKE ? OR description LIKE ? ORDER BY views DESC LIMIT 20')
-      .all(`%${q}%`, `%${q}%`);
+    const results = [];
+    if (type === 'all' || type === 'streams') {
+      const streams = db.prepare('SELECT id, name, status, isLive FROM live_streams WHERE name LIKE ?')
+        .all(`%${q}%`);
+      results.push(...streams.map(s => ({ type: 'stream', ...s })));
+    }
+    if (type === 'all' || type === 'videos') {
+      const videos = db.prepare('SELECT id, title, views, thumbnail FROM videos WHERE title LIKE ?')
+        .all(`%${q}%`);
+      results.push(...videos.map(v => ({ type: 'video', ...v })));
+    }
 
-    res.json({
-      videos: videos.map(v => ({
-        id: v.id,
-        title: v.title,
-        description: v.description,
-        views: v.views,
-        thumbnail: v.thumbnail,
-        duration: v.duration,
-        resolution: v.resolution,
-        embedUrl: `/embed/${v.id}`
-      }))
-    });
+    res.json({ results, query: q });
   });
 
-  // Server info
-  app.get('/api/server', (req, res) => {
-    const db = getDB();
-    const videoCount = db.prepare('SELECT COUNT(*) as total FROM videos').get().total;
-    const storageUsed = db.prepare('SELECT COALESCE(SUM(filesize), 0) as total FROM videos').get().total;
-
-    const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'videos');
-    let dirSize = storageUsed;
-    try {
-      const fs = require('fs');
-      const files = fs.readdirSync(uploadDir);
-      dirSize = files.reduce((acc, f) => {
-        const stat = fs.statSync(path.join(uploadDir, f));
-        return acc + stat.size;
-      }, 0);
-    } catch (e) {}
-
+  // API info
+  app.get('/api/info', (req, res) => {
     res.json({
-      name: 'Cloud Stream',
-      version: '1.0.0',
-      features: {
-        videoUpload: true,
-        liveStreaming: true,
-        hlsStreaming: true,
-        transcoding: true,
-        embedPlayer: true,
-        analytics: true,
-        searchAndDiscovery: true,
-        cdn: false
-      },
-      stats: {
-        totalVideos: videoCount,
-        storageUsed: formatBytes(dirSize),
-        maxUploadSize: '5 GB'
-      },
+      name: 'Stream Hub',
+      version: '2.0.0',
+      description: 'Professional RTMP Streaming & Multi-Platform Restreaming Platform',
+      features: [
+        'RTMP Server with Auto-HLS',
+        'Multi-Platform Restreaming (YouTube, Twitch, Facebook, Custom)',
+        'VOD Upload & Management',
+        'Auto Thumbnail Generation',
+        'Adaptive Bitrate HLS Streaming',
+        'Live Recording',
+        'Real-time Analytics',
+        'Chat Support',
+        'Embed Player',
+        'REST API'
+      ],
       endpoints: {
-        upload: '/api/upload',
-        videos: '/api/videos',
-        live: '/api/live',
-        search: '/api/search',
-        embed: '/embed/{id}',
-        stream: '/api/video/{id}/stream',
-        hls: '/api/video/{id}/hls/master.m3u8'
+        streams: 'GET/POST /api/streams',
+        upload: 'POST /api/upload',
+        videos: 'GET /api/videos',
+        search: 'GET /api/search?q=query',
+        dashboard: 'GET /api/dashboard',
+        health: 'GET /api/health',
+        settings: 'GET/PUT /api/settings'
       }
     });
   });

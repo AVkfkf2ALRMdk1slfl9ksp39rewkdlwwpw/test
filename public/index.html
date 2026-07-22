@@ -3,639 +3,431 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cloud Stream - Professional Video Platform</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --bg-primary: #0a0a0f;
-      --bg-secondary: #12121a;
-      --bg-card: #1a1a2e;
-      --bg-hover: #252540;
-      --accent: #6366f1;
-      --accent-light: #818cf8;
-      --accent-dark: #4f46e5;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --border: #1e293b;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-    }
-    body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
-    
-    /* Layout */
-    .app { display: flex; min-height: 100vh; }
-    .sidebar { width: 260px; background: var(--bg-secondary); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; }
-    .main { margin-left: 260px; flex: 1; padding: 32px; }
-    
-    /* Logo */
-    .logo { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 32px; }
-    .logo-icon { width: 40px; height: 40px; background: var(--gradient); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .logo-text { font-size: 20px; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    
-    /* Navigation */
-    .nav { flex: 1; }
-    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: var(--text-secondary); text-decoration: none; margin-bottom: 4px; transition: all 0.2s; cursor: pointer; font-size: 14px; font-weight: 500; }
-    .nav-item:hover, .nav-item.active { background: var(--bg-hover); color: var(--text-primary); }
-    .nav-item.active { color: var(--accent-light); }
-    .nav-item svg { width: 20px; height: 20px; }
-    .nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-    
-    /* Stats Cards */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; transition: transform 0.2s; }
-    .stat-card:hover { transform: translateY(-2px); }
-    .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
-    .stat-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-    .stat-change { font-size: 12px; color: var(--success); }
-    
-    /* Section Headers */
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .section-title { font-size: 18px; font-weight: 600; }
-    
-    /* Upload Area */
-    .upload-zone { border: 2px dashed var(--border); border-radius: 16px; padding: 48px; text-align: center; margin-bottom: 32px; transition: all 0.3s; cursor: pointer; position: relative; }
-    .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(99, 102, 241, 0.05); }
-    .upload-zone svg { width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 16px; }
-    .upload-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-    .upload-desc { font-size: 13px; color: var(--text-muted); }
-    .upload-progress { margin-top: 16px; display: none; }
-    .upload-progress.active { display: block; }
-    .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-    .progress-fill { height: 100%; background: var(--gradient); border-radius: 3px; transition: width 0.3s; }
-    
-    /* Video Grid */
-    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-    .video-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: all 0.2s; cursor: pointer; }
-    .video-card:hover { transform: translateY(-4px); border-color: var(--accent); }
-    .video-thumb { aspect-ratio: 16/9; background: var(--bg-hover); position: relative; overflow: hidden; }
-    .video-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .video-thumb .duration { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-    .video-thumb .live-badge { position: absolute; top: 8px; left: 8px; background: var(--danger); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-    .video-thumb .live-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .video-info { padding: 16px; }
-    .video-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .video-meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
-    
-    /* Buttons */
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
-    .btn-primary { background: var(--gradient); color: #fff; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-secondary { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); }
-    .btn-secondary:hover { border-color: var(--accent); }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-    
-    /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-    .modal-overlay.active { display: flex; }
-    .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .modal-title { font-size: 18px; font-weight: 600; }
-    .modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 24px; }
-    
-    /* Form */
-    .form-group { margin-bottom: 20px; }
-    .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
-    .form-input { width: 100%; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); font-size: 14px; transition: border-color 0.2s; }
-    .form-input:focus { outline: none; border-color: var(--accent); }
-    .form-textarea { min-height: 100px; resize: vertical; }
-    
-    /* Player */
-    .player-container { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-    .player-container.active { display: flex; }
-    .player-container video { max-width: 100%; max-height: 80vh; border-radius: 8px; }
-    .player-close { position: absolute; top: 20px; right: 20px; background: var(--bg-hover); border: 1px solid var(--border); color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
-    .player-info { margin-top: 16px; text-align: center; color: var(--text-secondary); font-size: 14px; }
-    
-    /* Toast */
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; z-index: 3000; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { border-color: var(--success); }
-    .toast.error { border-color: var(--danger); }
-    
-    /* Live stream card */
-    .live-info { padding: 16px; }
-    .live-key { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; color: var(--accent-light); word-break: break-all; margin-top: 8px; }
-    
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .video-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; padding: 16px; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-      .video-grid { grid-template-columns: 1fr; }
-    }
-    
-    /* Empty state */
-    .empty-state { text-align: center; padding: 64px 32px; color: var(--text-muted); }
-    .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.5; }
-    .empty-state p { font-size: 14px; }
-    
-    /* Search */
-    .search-bar { position: relative; margin-bottom: 24px; }
-    .search-bar input { width: 100%; padding: 12px 16px 12px 44px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary); font-size: 14px; }
-    .search-bar input:focus { outline: none; border-color: var(--accent); }
-    .search-bar svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted); }
-    
-    /* Tabs */
-    .tabs { display: flex; gap: 4px; background: var(--bg-secondary); padding: 4px; border-radius: 10px; margin-bottom: 24px; width: fit-content; }
-    .tab { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.2s; border: none; background: none; }
-    .tab.active { background: var(--bg-hover); color: var(--text-primary); }
-    
-    /* Footer */
-    .footer { margin-top: 48px; padding: 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 12px; }
-  </style>
+  <title>Stream Hub - Professional RTMP Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div class="app">
+  <div class="app" id="app">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="logo">
-        <div class="logo-icon">▶</div>
-        <span class="logo-text">Cloud Stream</span>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <span class="logo-text">Stream Hub</span>
+        </div>
+        <span class="logo-badge">v2.0</span>
       </div>
       <nav class="nav">
-        <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <a class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           Dashboard
-        </div>
-        <div class="nav-item" data-page="videos" onclick="showPage('videos')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Videos
-        </div>
-        <div class="nav-item" data-page="live" onclick="showPage('live')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+        </a>
+        <a class="nav-item" data-page="streams" onclick="showPage('streams')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
           Live Streams
-          <span class="nav-badge" id="liveCount" style="display:none">0</span>
-        </div>
-        <div class="nav-item" data-page="analytics" onclick="showPage('analytics')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          <span class="badge" id="liveBadge" style="display:none">0</span>
+        </a>
+        <a class="nav-item" data-page="upload" onclick="showPage('upload')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </a>
+        <a class="nav-item" data-page="videos" onclick="showPage('videos')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>
+          Videos
+        </a>
+        <a class="nav-item" data-page="analytics" onclick="showPage('analytics')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
           Analytics
-        </div>
-        <div class="nav-item" data-page="settings" onclick="showPage('settings')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </a>
+        <a class="nav-item" data-page="restream" onclick="showPage('restream')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          Multi-Restream
+        </a>
+        <a class="nav-item" data-page="settings" onclick="showPage('settings')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Settings
-        </div>
+        </a>
       </nav>
+      <div class="sidebar-footer">
+        <div class="server-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span class="status-text" id="statusText">Connecting...</span>
+        </div>
+      </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="main">
+    <main class="main" id="mainContent">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-title" id="pageTitle">Dashboard</div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" onclick="showPage('streams'); setTimeout(()=>showCreateStream(), 100)">+ New Stream</button>
+        </div>
+      </header>
+
       <!-- Dashboard Page -->
-      <div id="page-dashboard">
+      <div id="page-dashboard" class="page active">
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">Total Videos</div>
-            <div class="stat-value" id="stat-videos">0</div>
-            <div class="stat-change">↑ All time</div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #f97316)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">Live Streams</div>
+              <div class="stat-value" id="statLive">0</div>
+            </div>
+            <div class="stat-indicator live-indicator" id="liveIndicator" style="display:none">
+              <span class="live-dot"></span> Active
+            </div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Live Streams</div>
-            <div class="stat-value" id="stat-live">0</div>
-            <div class="stat-change" style="color: var(--success)">● Active</div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">Videos</div>
+              <div class="stat-value" id="statVideos">0</div>
+            </div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Total Views</div>
-            <div class="stat-value" id="stat-views">0</div>
-            <div class="stat-change">↑ Growing</div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">Viewers</div>
+              <div class="stat-value" id="statViewers">0</div>
+            </div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Storage Used</div>
-            <div class="stat-value" id="stat-storage">0 MB</div>
-            <div class="stat-change">Available: Unlimited</div>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">Storage</div>
+              <div class="stat-value" id="statStorage">0 B</div>
+            </div>
           </div>
         </div>
 
-        <!-- Upload Zone -->
-        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <div class="upload-title">Upload Video</div>
-          <div class="upload-desc">Drag & drop or click to upload • MP4, MKV, AVI, MOV, WebM • Up to 5GB</div>
-          <input type="file" id="fileInput" accept="video/*" style="display:none" onchange="handleUpload(event)">
-          <div class="upload-progress" id="uploadProgress">
-            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-            <p style="margin-top:8px;font-size:13px;color:var(--text-secondary)" id="progressText">Uploading...</p>
-          </div>
-        </div>
-
-        <!-- Recent Videos -->
+        <!-- Quick Actions -->
         <div class="section-header">
-          <h2 class="section-title">Recent Videos</h2>
+          <h2>Quick Actions</h2>
         </div>
-        <div class="video-grid" id="recentVideos">
+        <div class="quick-actions">
+          <button class="action-card" onclick="showPage('streams'); setTimeout(()=>showCreateStream(), 100)">
+            <div class="action-icon">📡</div>
+            <div class="action-title">Start Live Stream</div>
+            <div class="action-desc">Create a new RTMP stream</div>
+          </button>
+          <button class="action-card" onclick="showPage('upload')">
+            <div class="action-icon">📤</div>
+            <div class="action-title">Upload Video</div>
+            <div class="action-desc">Upload VOD content</div>
+          </button>
+          <button class="action-card" onclick="showPage('restream')">
+            <div class="action-icon">🌐</div>
+            <div class="action-title">Multi-Restream</div>
+            <div class="action-desc">Stream to multiple platforms</div>
+          </button>
+          <button class="action-card" onclick="showPage('analytics')">
+            <div class="action-icon">📊</div>
+            <div class="action-title">View Analytics</div>
+            <div class="action-desc">Monitor performance</div>
+          </button>
+        </div>
+
+        <!-- Live Streams Preview -->
+        <div class="section-header">
+          <h2>Active Streams</h2>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('streams')">View All →</button>
+        </div>
+        <div id="dashboardStreams" class="stream-list">
           <div class="empty-state">
-            <p>No videos yet. Upload your first video to get started!</p>
+            <div class="empty-icon">📡</div>
+            <p>No active streams</p>
+            <span>Start your first live stream</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Streams Page -->
+      <div id="page-streams" class="page">
+        <div class="section-header">
+          <h2>Live Streams</h2>
+          <button class="btn btn-primary" onclick="showCreateStream()">+ New Stream</button>
+        </div>
+        <div class="search-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search streams..." id="streamSearch" oninput="filterStreams(this.value)">
+        </div>
+        <div id="streamsList" class="stream-list">
+          <div class="empty-state">
+            <div class="empty-icon">📡</div>
+            <p>No streams created yet</p>
+            <span>Create your first stream to get started</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Page -->
+      <div id="page-upload" class="page">
+        <div class="section-header">
+          <h2>Upload Video</h2>
+        </div>
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-content">
+            <div class="upload-icon">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <h3>Drop your video here</h3>
+            <p>or click to browse • MP4, MKV, AVI, MOV, WebM, FLV • Up to 10GB</p>
+            <input type="file" id="fileInput" accept="video/*" style="display:none" onchange="handleUpload(event)">
+          </div>
+          <div class="upload-progress" id="uploadProgress" style="display:none">
+            <div class="progress-header">
+              <span id="uploadFileName">Uploading...</span>
+              <span id="uploadPercent">0%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-info">
+              <span id="uploadSpeed">0 MB/s</span>
+              <span id="uploadETA">Calculating...</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="max-width:600px;margin-top:20px">
+          <label class="form-label">Video Title (optional)</label>
+          <input class="form-input" id="uploadTitle" placeholder="Enter video title...">
         </div>
       </div>
 
       <!-- Videos Page -->
-      <div id="page-videos" style="display:none">
-        <div class="search-bar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" placeholder="Search videos..." id="searchInput" oninput="searchVideos(this.value)">
-        </div>
-        <div class="video-grid" id="allVideos">
-          <div class="empty-state"><p>Loading videos...</p></div>
-        </div>
-      </div>
-
-      <!-- Live Streams Page -->
-      <div id="page-live" style="display:none">
+      <div id="page-videos" class="page">
         <div class="section-header">
-          <h2 class="section-title">Live Streams</h2>
-          <button class="btn btn-primary" onclick="showCreateStream()">+ New Stream</button>
+          <h2>Video Library</h2>
         </div>
-        <div class="video-grid" id="liveStreams">
-          <div class="empty-state"><p>No live streams yet</p></div>
+        <div class="search-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search videos..." id="videoSearch" oninput="searchVideos(this.value)">
+        </div>
+        <div id="videosGrid" class="video-grid">
+          <div class="empty-state">
+            <div class="empty-icon">🎬</div>
+            <p>No videos uploaded yet</p>
+            <span>Upload your first video to get started</span>
+          </div>
         </div>
       </div>
 
       <!-- Analytics Page -->
-      <div id="page-analytics" style="display:none">
+      <div id="page-analytics" class="page">
         <div class="section-header">
-          <h2 class="section-title">Analytics Overview</h2>
+          <h2>Analytics</h2>
         </div>
-        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr)">
           <div class="stat-card">
-            <div class="stat-label">Most Viewed Video</div>
-            <div class="stat-value" style="font-size:16px" id="topVideo">-</div>
+            <div class="stat-label">Total Uptime</div>
+            <div class="stat-value" id="analyticsUptime">0s</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Total Engagement</div>
-            <div class="stat-value" id="totalEngagement">0</div>
+            <div class="stat-label">Peak Viewers</div>
+            <div class="stat-value" id="analyticsPeak">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Watch Time</div>
+            <div class="stat-value" id="analyticsWatchTime">0h</div>
           </div>
         </div>
-        <h3 style="margin-bottom:16px;font-size:15px;color:var(--text-secondary)">Top Videos</h3>
-        <div id="analyticsVideos" style="display:grid;gap:12px">
-          <div class="empty-state"><p>Loading analytics...</p></div>
+        <div class="section-header" style="margin-top:32px">
+          <h2>Stream History</h2>
+        </div>
+        <div id="analyticsList">
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <p>No analytics data yet</p>
+            <span>Start streaming to collect data</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-Restream Page -->
+      <div id="page-restream" class="page">
+        <div class="section-header">
+          <h2>Multi-Platform Restreaming</h2>
+        </div>
+        <div class="restream-info">
+          <div class="info-card">
+            <h3>How it works</h3>
+            <p>Create a stream, then add targets (YouTube, Twitch, Facebook, or any RTMP server). Your stream will be sent to all platforms simultaneously.</p>
+          </div>
+          <div class="platforms-grid">
+            <div class="platform-card"><span class="platform-icon" style="background:#FF0000">▶</span><span>YouTube</span></div>
+            <div class="platform-card"><span class="platform-icon" style="background:#9146FF">T</span><span>Twitch</span></div>
+            <div class="platform-card"><span class="platform-icon" style="background:#1877F2">f</span><span>Facebook</span></div>
+            <div class="platform-card"><span class="platform-icon" style="background:#E1306C">📷</span><span>Instagram</span></div>
+            <div class="platform-card"><span class="platform-icon" style="background:#0077B5">in</span><span>LinkedIn</span></div>
+            <div class="platform-card"><span class="platform-icon" style="background:#1DA1F2">🐦</span><span>Twitter</span></div>
+          </div>
+        </div>
+        <div id="restreamTargets">
+          <div class="empty-state">
+            <div class="empty-icon">🌐</div>
+            <p>No restream targets configured</p>
+            <span>Create a stream first, then add targets</span>
+          </div>
         </div>
       </div>
 
       <!-- Settings Page -->
-      <div id="page-settings" style="display:none">
+      <div id="page-settings" class="page">
         <div class="section-header">
-          <h2 class="section-title">Platform Settings</h2>
+          <h2>Settings</h2>
         </div>
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
-          <h3 style="margin-bottom:16px;font-size:15px">API Information</h3>
-          <div style="display:grid;gap:12px">
-            <div><span style="color:var(--text-muted);font-size:13px">Base URL:</span> <code style="color:var(--accent-light);background:var(--bg-primary);padding:4px 8px;border-radius:6px" id="baseUrl">-</code></div>
-            <div><span style="color:var(--text-muted);font-size:13px">Upload API:</span> <code style="color:var(--accent-light);background:var(--bg-primary);padding:4px 8px;border-radius:6px">POST /api/upload</code></div>
-            <div><span style="color:var(--text-muted);font-size:13px">Stream API:</span> <code style="color:var(--accent-light);background:var(--bg-primary);padding:4px 8px;border-radius:6px">GET /api/video/{id}/stream</code></div>
-            <div><span style="color:var(--text-muted);font-size:13px">HLS API:</span> <code style="color:var(--accent-light);background:var(--bg-primary);padding:4px 8px;border-radius:6px">GET /api/video/{id}/hls/master.m3u8</code></div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>Server Info</h3>
+            <div class="settings-list" id="serverInfo">
+              <div class="setting-item"><span class="setting-label">Platform</span><span class="setting-value">Stream Hub v2.0</span></div>
+              <div class="setting-item"><span class="setting-label">RTMP Port</span><span class="setting-value">1935</span></div>
+              <div class="setting-item"><span class="setting-label">HTTP Port</span><span class="setting-value" id="settingPort">3000</span></div>
+              <div class="setting-item"><span class="setting-label">Max Bitrate</span><span class="setting-value">8000 kbps</span></div>
+              <div class="setting-item"><span class="setting-label">Max Resolution</span><span class="setting-value">1920x1080</span></div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>API Endpoints</h3>
+            <div class="api-endpoints">
+              <div class="endpoint-item"><code>GET</code> <code class="endpoint-path">/api/streams</code></div>
+              <div class="endpoint-item"><code>POST</code> <code class="endpoint-path">/api/streams</code></div>
+              <div class="endpoint-item"><code>POST</code> <code class="endpoint-path">/api/upload</code></div>
+              <div class="endpoint-item"><code>GET</code> <code class="endpoint-path">/api/videos</code></div>
+              <div class="endpoint-item"><code>GET</code> <code class="endpoint-path">/api/dashboard</code></div>
+              <div class="endpoint-item"><code>GET</code> <code class="endpoint-path">/api/search?q=term</code></div>
+              <div class="endpoint-item"><code>GET</code> <code class="endpoint-path">/api/health</code></div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>Connection Guide</h3>
+            <div class="guide-content">
+              <h4>OBS Studio Setup</h4>
+              <ol>
+                <li>Open OBS → Settings → Stream</li>
+                <li>Service: <strong>Custom...</strong></li>
+                <li>Server: <code class="code-inline" id="rtmpServer">rtmp://your-domain:1935/live</code></li>
+                <li>Stream Key: <strong>Copy from stream settings</strong></li>
+                <li>Click Start Streaming</li>
+              </ol>
+              <h4>FFmpeg Command</h4>
+              <div class="code-block">
+                <code>ffmpeg -re -i input.mp4 -c:v libx264 -c:a aac \
+  -f flv rtmp://your-domain:1935/live/STREAM_KEY</code>
+                <button class="btn-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>System Status</h3>
+            <div id="systemStatus">
+              <div class="status-item">
+                <span class="status-label">CPU Usage</span>
+                <div class="status-bar"><div class="status-fill" id="cpuBar" style="width:0%"></div></div>
+                <span class="status-value" id="cpuValue">0%</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Memory</span>
+                <div class="status-bar"><div class="status-fill" id="memBar" style="width:0%"></div></div>
+                <span class="status-value" id="memValue">0 MB</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Uptime</span>
+                <span class="status-value" id="uptimeValue">0m</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Node Version</span>
+                <span class="status-value" id="nodeVersion">-</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px">
-          <h3 style="margin-bottom:16px;font-size:15px">Platform Info</h3>
-          <div style="display:grid;gap:8px;font-size:14px;color:var(--text-secondary)">
-            <p>Cloud Stream v1.0.0</p>
-            <p>Professional video hosting and streaming platform</p>
-            <p>Features: Video Upload, Live Streaming, HLS, Transcoding, Embed Player, Analytics</p>
-            <p>Powered by Node.js + FFmpeg + SQLite</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer">
-        Cloud Stream Platform • Built with Node.js & FFmpeg
       </div>
     </main>
-  </div>
-
-  <!-- Video Player Modal -->
-  <div class="player-container" id="playerModal">
-    <button class="player-close" onclick="closePlayer()">✕</button>
-    <video id="videoPlayer" controls></video>
-    <div class="player-info" id="playerInfo"></div>
   </div>
 
   <!-- Create Stream Modal -->
   <div class="modal-overlay" id="streamModal">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title">Create Live Stream</h3>
+        <h3>Create Live Stream</h3>
         <button class="modal-close" onclick="closeStreamModal()">✕</button>
       </div>
       <div class="form-group">
-        <label class="form-label">Stream Title</label>
-        <input class="form-input" id="streamTitle" placeholder="Enter stream title">
+        <label class="form-label">Stream Name *</label>
+        <input class="form-input" id="streamName" placeholder="My Live Stream">
       </div>
       <div class="form-group">
         <label class="form-label">Description</label>
-        <textarea class="form-input form-textarea" id="streamDesc" placeholder="Stream description"></textarea>
+        <textarea class="form-input" id="streamDesc" rows="3" placeholder="Stream description..."></textarea>
       </div>
-      <button class="btn btn-primary" onclick="createStream()">Create Stream</button>
-      <div id="streamResult" style="margin-top:20px;display:none">
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">RTMP URL:</p>
-        <div class="live-key" id="streamRtmp">-</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin-top:12px;margin-bottom:8px">Stream Key:</p>
-        <div class="live-key" id="streamKeyDisplay">-</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin-top:12px;margin-bottom:8px">Embed URL:</p>
-        <div class="live-key" id="streamEmbed">-</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Chat</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="chatEnabled" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Auto Record</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="recordEnabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="createStream()" style="width:100%;padding:14px">Create Stream</button>
+      <div id="streamResult" style="display:none;margin-top:24px">
+        <div class="result-section">
+          <h4>Stream Created Successfully!</h4>
+          <div class="result-item">
+            <span class="result-label">RTMP Server</span>
+            <code class="result-code" id="resultRtmp">-</code>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Stream Key</span>
+            <code class="result-code" id="resultKey">-</code>
+          </div>
+          <div class="result-item">
+            <span class="result-label">HLS Playback</span>
+            <code class="result-code" id="resultHls">-</code>
+          </div>
+          <div class="result-item">
+            <span class="result-label">Embed URL</span>
+            <code class="result-code" id="resultEmbed">-</code>
+          </div>
+          <button class="btn btn-primary" onclick="copyAllStreamInfo()" style="margin-top:12px;width:100%">Copy All Info</button>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Video Player Modal -->
+  <div class="player-modal" id="playerModal">
+    <div class="player-backdrop" onclick="closePlayer()"></div>
+    <div class="player-content">
+      <button class="player-close" onclick="closePlayer()">✕</button>
+      <video id="videoPlayer" controls autoplay playsinline></video>
+      <div class="player-details" id="playerDetails"></div>
+    </div>
+  </div>
+
   <!-- Toast -->
-  <div class="toast" id="toast"></div>
+  <div class="toast-container" id="toastContainer"></div>
 
-  <script>
-    const API = '';
-    let currentPage = 'dashboard';
-
-    // Initialize
-    async function init() {
-      await loadStats();
-      await loadRecentVideos();
-      document.getElementById('baseUrl').textContent = window.location.origin;
-    }
-
-    // Navigation
-    function showPage(page) {
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
-      document.querySelectorAll('[id^="page-"]').forEach(p => p.style.display = 'none');
-      document.getElementById(`page-${page}`).style.display = 'block';
-      currentPage = page;
-
-      if (page === 'videos') loadAllVideos();
-      if (page === 'live') loadLiveStreams();
-      if (page === 'analytics') loadAnalytics();
-    }
-
-    // Stats
-    async function loadStats() {
-      try {
-        const res = await fetch(`${API}/api/stats`);
-        const data = await res.json();
-        document.getElementById('stat-videos').textContent = data.overview.totalVideos;
-        document.getElementById('stat-live').textContent = data.overview.liveStreams;
-        document.getElementById('stat-views').textContent = data.overview.totalViews.toLocaleString();
-        document.getElementById('stat-storage').textContent = data.overview.totalStorage;
-      } catch (e) { console.log('Stats error:', e); }
-    }
-
-    // Upload
-    function handleUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append('video', file);
-      formData.append('title', file.name.replace(/\.[^.]+$/, ''));
-
-      const progress = document.getElementById('uploadProgress');
-      const fill = document.getElementById('progressFill');
-      const text = document.getElementById('progressText');
-      progress.classList.add('active');
-
-      const xhr = new XMLHttpRequest();
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = (e.loaded / e.total) * 100;
-          fill.style.width = `${pct}%`;
-          text.textContent = `Uploading: ${Math.round(pct)}%`;
-        }
-      };
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const result = JSON.parse(xhr.responseText);
-          showToast('Video uploaded successfully!', 'success');
-          fill.style.width = '100%';
-          text.textContent = 'Upload complete!';
-          setTimeout(() => progress.classList.remove('active'), 2000);
-          loadStats();
-          loadRecentVideos();
-        } else {
-          showToast('Upload failed', 'error');
-          progress.classList.remove('active');
-        }
-      };
-      xhr.open('POST', `${API}/api/upload`);
-      xhr.send(formData);
-    }
-
-    // Drag & Drop
-    const uploadZone = document.getElementById('uploadZone');
-    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('video/')) {
-        const input = document.getElementById('fileInput');
-        input.files = e.dataTransfer.files;
-        handleUpload({ target: input });
-      }
-    });
-
-    // Videos
-    async function loadRecentVideos() {
-      try {
-        const res = await fetch(`${API}/api/videos?limit=6`);
-        const data = await res.json();
-        renderVideos(data.videos, 'recentVideos');
-      } catch (e) {}
-    }
-
-    async function loadAllVideos() {
-      try {
-        const res = await fetch(`${API}/api/videos`);
-        const data = await res.json();
-        renderVideos(data.videos, 'allVideos');
-      } catch (e) {}
-    }
-
-    function renderVideos(videos, containerId) {
-      const container = document.getElementById(containerId);
-      if (!videos || videos.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p>No videos found</p></div>';
-        return;
-      }
-      container.innerHTML = videos.map(v => `
-        <div class="video-card" onclick="playVideo('${v.id}')">
-          <div class="video-thumb">
-            ${v.thumbnail ? `<img src="${v.thumbnail}" alt="${v.title}">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">🎬</div>'}
-            <span class="duration">${formatDuration(v.duration)}</span>
-            ${v.isLive ? '<span class="live-badge"><span class="live-dot"></span>LIVE</span>' : ''}
-          </div>
-          <div class="video-info">
-            <div class="video-title">${v.title}</div>
-            <div class="video-meta">
-              <span>${v.views} views</span>
-              <span>${v.resolution || ''}</span>
-              <span>${new Date(v.createdAt).toLocaleDateString()}</span>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function playVideo(id) {
-      fetch(`${API}/api/video/${id}`).then(r => r.json()).then(v => {
-        const modal = document.getElementById('playerModal');
-        const player = document.getElementById('videoPlayer');
-        const info = document.getElementById('playerInfo');
-        player.src = `${API}${v.uploadUrl}`;
-        info.textContent = `${v.title} • ${v.views} views • ${v.resolution}`;
-        modal.classList.add('active');
-        player.play();
-      });
-    }
-
-    function closePlayer() {
-      const modal = document.getElementById('playerModal');
-      const player = document.getElementById('videoPlayer');
-      player.pause();
-      player.src = '';
-      modal.classList.remove('active');
-    }
-
-    // Live Streams
-    async function loadLiveStreams() {
-      try {
-        const res = await fetch(`${API}/api/live`);
-        const data = await res.json();
-        const container = document.getElementById('liveStreams');
-        if (!data.streams || data.streams.length === 0) {
-          container.innerHTML = '<div class="empty-state"><p>No live streams yet. Create one to get started!</p></div>';
-          return;
-        }
-        container.innerHTML = data.streams.map(s => `
-          <div class="video-card">
-            <div class="video-thumb">
-              <div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:48px">${s.isLive ? '📡' : '⏺️'}</div>
-              ${s.isLive ? '<span class="live-badge"><span class="live-dot"></span>LIVE</span>' : ''}
-            </div>
-            <div class="live-info">
-              <div class="video-title">${s.title}</div>
-              <div class="video-meta">
-                <span>${s.isLive ? '● Active' : '○ Offline'}</span>
-                <span>${s.viewers || 0} viewers</span>
-              </div>
-              <div style="margin-top:12px;display:flex;gap:8px">
-                ${s.isLive 
-                  ? `<button class="btn btn-danger btn-sm" onclick="stopStream('${s.id}')">Stop</button>`
-                  : `<button class="btn btn-secondary btn-sm" onclick="startStream('${s.id}')">Start</button>`
-                }
-                <button class="btn btn-secondary btn-sm" onclick="copyStreamKey('${s.streamKey}')">Copy Key</button>
-              </div>
-            </div>
-          </div>
-        `).join('');
-      } catch (e) {}
-    }
-
-    function showCreateStream() {
-      document.getElementById('streamModal').classList.add('active');
-      document.getElementById('streamResult').style.display = 'none';
-    }
-
-    function closeStreamModal() {
-      document.getElementById('streamModal').classList.remove('active');
-    }
-
-    async function createStream() {
-      const title = document.getElementById('streamTitle').value;
-      const desc = document.getElementById('streamDesc').value;
-      try {
-        const res = await fetch(`${API}/api/live`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, description: desc })
-        });
-        const data = await res.json();
-        if (data.success) {
-          document.getElementById('streamRtmp').textContent = data.stream.rtmpUrl;
-          document.getElementById('streamKeyDisplay').textContent = data.stream.streamKey;
-          document.getElementById('streamEmbed').textContent = `${window.location.origin}${data.stream.embedUrl}`;
-          document.getElementById('streamResult').style.display = 'block';
-          showToast('Live stream created!', 'success');
-          loadLiveStreams();
-          loadStats();
-        }
-      } catch (e) { showToast('Failed to create stream', 'error'); }
-    }
-
-    async function startStream(id) {
-      await fetch(`${API}/api/live/${id}/start`, { method: 'POST' });
-      showToast('Stream started', 'success');
-      loadLiveStreams();
-    }
-
-    async function stopStream(id) {
-      await fetch(`${API}/api/live/${id}/stop`, { method: 'POST' });
-      showToast('Stream stopped', 'success');
-      loadLiveStreams();
-    }
-
-    function copyStreamKey(key) {
-      navigator.clipboard.writeText(key);
-      showToast('Stream key copied!', 'success');
-    }
-
-    // Search
-    async function searchVideos(query) {
-      if (!query) { loadAllVideos(); return; }
-      try {
-        const res = await fetch(`${API}/api/videos?search=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        renderVideos(data.videos, 'allVideos');
-      } catch (e) {}
-    }
-
-    // Analytics
-    async function loadAnalytics() {
-      try {
-        const res = await fetch(`${API}/api/analytics`);
-        const data = await res.json();
-        document.getElementById('totalEngagement').textContent = data.totalViews?.toLocaleString() || '0';
-        if (data.topVideos?.[0]) document.getElementById('topVideo').textContent = data.topVideos[0].title;
-        const container = document.getElementById('analyticsVideos');
-        if (data.topVideos?.length) {
-          container.innerHTML = data.topVideos.map((v, i) => `
-            <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px">
-              <span style="font-size:20px;font-weight:700;color:var(--text-muted);width:32px">${i + 1}</span>
-              <div style="flex:1">
-                <div style="font-weight:500">${v.title}</div>
-                <div style="font-size:12px;color:var(--text-muted)">${v.views} views</div>
-              </div>
-              <button class="btn btn-secondary btn-sm" onclick="playVideo('${v.id}')">Play</button>
-            </div>
-          `).join('');
-        }
-      } catch (e) {}
-    }
-
-    // Toast
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast ${type} show`;
-      setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    // Helpers
-    function formatDuration(seconds) {
-      if (!seconds) return '0:00';
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor((seconds % 3600) / 60);
-      const s = Math.floor(seconds % 60);
-      return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m}:${s.toString().padStart(2, '0')}`;
-    }
-
-    // Init
-    init();
-  </script>
+  <script src="/js/app.js"></script>
 </body>
 </html>
