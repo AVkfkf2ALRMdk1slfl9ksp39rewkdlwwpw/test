@@ -1,32 +1,37 @@
-FROM node:20-slim
+FROM debian:bullseye-slim
 
-# Install ffmpeg for video processing and transcoding
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Create app directory
-WORKDIR /app
+# Install only essential deps that the erlang binary needs
+# Flussonic bundles its own libssl.so.1.1 and libcrypto.so.1.1
+RUN apt-get update --fix-missing && apt-get install -y --no-install-recommends \
+    libc6 \
+    libstdc++6 \
+    libgcc-s1 \
+    libncurses6 \
+    libtinfo6 \
+    dpkg \
+    bash \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy package files and install
-COPY package.json ./
-RUN npm install
+# Copy all .deb files and install script
+COPY *.deb /tmp/
+COPY install.sh /tmp/install.sh
 
-# Copy source code
-COPY . .
+# Install Flussonic packages
+RUN cd /tmp && bash install.sh && rm -rf /tmp/*.deb /tmp/install.sh
 
-# Create runtime directories
-RUN mkdir -p uploads/videos uploads/thumbnails uploads/recordings \
-    public/uploads/public/uploads/videos public/uploads/thumbnails public/uploads/recordings \
-    server/data server/logs
+# Create required directories
+RUN mkdir -p /etc/flussonic /var/lib/flussonic /var/log/flussonic /var/run/flussonic
 
-# Set environment variables
-ENV PORT=3000
-ENV NODE_ENV=production
-ENV RTMP_PORT=1935
-ENV ADMIN_USER=admin
-ENV ADMIN_PASS=admin
+# Set environment
+ENV PORT=80
+ENV PROD=true
+ENV DO_NOT_DO_NET_TUNING=yes
 
-# Expose ports (HTTP + RTMP)
-EXPOSE 3000 1935
+# Expose ports
+EXPOSE 80 1935 8080 8443
 
-# Start the application
-CMD ["node", "server/index.js"]
+# Start Flussonic in production mode with -noinput
+CMD ["/opt/flussonic/bin/run", "-noinput", "-c", "/etc/flussonic/flussonic.conf"]
