@@ -27,9 +27,6 @@ RUN rm *.deb
 # Prepare configuration and data directories
 RUN mkdir -p /etc/flussonic/ /var/lib/flussonic
 
-# Fix hostname resolution for Erlang node (streamer@server.l)
-RUN echo "127.0.0.1 server.l" >> /etc/hosts
-
 # Make start script executable
 RUN chmod +x /app/start.sh
 
