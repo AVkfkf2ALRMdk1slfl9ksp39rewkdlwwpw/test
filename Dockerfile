@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary system dependencies
+# Install necessary system dependencies including python3 for reverse proxy
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     libcap2-bin \
     procps \
     ca-certificates \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
