@@ -5,29 +5,24 @@ if ! grep -q "server.l" /etc/hosts 2>/dev/null; then
     echo "127.0.0.1 server.l" >> /etc/hosts
 fi
 
-echo "=== RAILWAY PORT ENV ==="
+# Log the PORT for debugging
 echo "PORT=$PORT"
-echo "========================"
 
-# Flussonic internal HTTP port
-FLUSSONIC_PORT=8888
-RAILWAY_PORT=${PORT:-8080}
+PORT_TO_USE=${PORT:-8080}
 
-# Configure Flussonic to listen on internal port
-echo "http $FLUSSONIC_PORT;" > /etc/flussonic/flussonic.conf
+# Start Flussonic in background on port 8888
+echo "http 8888;" > /etc/flussonic/flussonic.conf
 echo "rtmp 1935;" >> /etc/flussonic/flussonic.conf
 echo "pulsedb /var/lib/flussonic;" >> /etc/flussonic/flussonic.conf
 echo "session_log /var/lib/flussonic;" >> /etc/flussonic/flussonic.conf
 echo "edit_auth admin admin;" >> /etc/flussonic/flussonic.conf
 echo "iptv;" >> /etc/flussonic/flussonic.conf
 
-# Start Flussonic in background
 /opt/flussonic/bin/run -noinput &
 FLUSSONIC_PID=$!
 
-# Wait for Flussonic to be ready
-sleep 5
+sleep 3
 
-# Start Python HTTP reverse proxy on Railway's PORT
-echo "Starting proxy on port $RAILWAY_PORT -> Flussonic on port $FLUSSONIC_PORT"
-exec python3 /app/proxy.py $FLUSSONIC_PORT $RAILWAY_PORT
+# Use socat as TCP proxy (more reliable than Python for this use case)
+echo "Starting socat proxy: 0.0.0.0:$PORT_TO_USE -> 127.0.0.1:8888"
+exec socat TCP-LISTEN:$PORT_TO_USE,fork,reuseaddr TCP:127.0.0.1:8888
