@@ -5,14 +5,13 @@ if ! grep -q "server.l" /etc/hosts 2>/dev/null; then
     echo "127.0.0.1 server.l" >> /etc/hosts
 fi
 
+echo "=== RAILWAY PORT ENV ==="
+echo "PORT=$PORT"
+echo "========================"
+
 # Flussonic internal HTTP port
 FLUSSONIC_PORT=8888
 RAILWAY_PORT=${PORT:-8080}
-
-# Install python3 for the proxy (lightweight, no extra packages needed)
-if ! command -v python3 &>/dev/null; then
-    apt-get update -qq && apt-get install -y -qq python3
-fi
 
 # Configure Flussonic to listen on internal port
 echo "http $FLUSSONIC_PORT;" > /etc/flussonic/flussonic.conf
@@ -27,7 +26,7 @@ echo "iptv;" >> /etc/flussonic/flussonic.conf
 FLUSSONIC_PID=$!
 
 # Wait for Flussonic to be ready
-sleep 3
+sleep 5
 
 # Start Python HTTP reverse proxy on Railway's PORT
 echo "Starting proxy on port $RAILWAY_PORT -> Flussonic on port $FLUSSONIC_PORT"
