@@ -2,14 +2,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    gnupg \
-    libcap2-bin \
-    procps \
-    ca-certificates \
-    python3 \
-    socat \
+    curl wget gnupg libcap2-bin procps ca-certificates python3 socat \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -25,6 +18,6 @@ RUN rm *.deb
 RUN mkdir -p /etc/flussonic/ /var/lib/flussonic
 RUN chmod +x /app/start.sh
 
-EXPOSE 80 1935
+EXPOSE 3000 8080 80 1935
 
 CMD ["/app/start.sh"]

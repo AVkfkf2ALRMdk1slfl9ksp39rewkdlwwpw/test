@@ -7,7 +7,7 @@ fi
 
 echo "PORT=$PORT"
 
-# Start Flussonic on port 8888
+# Flussonic internal port
 echo "http 8888;" > /etc/flussonic/flussonic.conf
 echo "rtmp 1935;" >> /etc/flussonic/flussonic.conf
 echo "pulsedb /var/lib/flussonic;" >> /etc/flussonic/flussonic.conf
@@ -15,25 +15,20 @@ echo "session_log /var/lib/flussonic;" >> /etc/flussonic/flussonic.conf
 echo "edit_auth admin admin;" >> /etc/flussonic/flussonic.conf
 echo "iptv;" >> /etc/flussonic/flussonic.conf
 
+# Start Flussonic in background
 /opt/flussonic/bin/run -noinput &
 sleep 3
 
-# Start socat proxy on PORT (Railway default) AND on common ports as fallback
+# Start proxies on multiple ports to figure out which one Railway uses
 PORT_TO_USE=${PORT:-8080}
-echo "Starting proxy on $PORT_TO_USE -> 127.0.0.1:8888"
-
-# Also start a simple healthcheck endpoint on port 3000 just in case
-python3 -c "
-from http.server import HTTPServer, BaseHTTPRequestHandler
-class H(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-Type','text/plain')
-        self.end_headers()
-        self.wfile.write(b'OK')
-    def log_message(self, *a): pass
-HTTPServer(('0.0.0.0', 3000), H).serve_forever()
-" &
+echo "Starting socat proxy on $PORT_TO_USE -> 127.0.0.1:8888"
 
 # Start socat on PORT
-exec socat TCP-LISTEN:$PORT_TO_USE,fork,reuseaddr TCP:127.0.0.1:8888
+socat TCP-LISTEN:$PORT_TO_USE,fork,reuseaddr TCP:127.0.0.1:8888 &
+
+# Also start on common Railway ports as fallback
+socat TCP-LISTEN:3000,fork,reuseaddr TCP:127.0.0.1:8888 &
+socat TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:8888 &
+
+# Keep the main process alive
+wait
