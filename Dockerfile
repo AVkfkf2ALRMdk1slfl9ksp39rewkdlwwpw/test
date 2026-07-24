@@ -18,6 +18,7 @@ RUN rm *.deb
 RUN mkdir -p /etc/flussonic/ /var/lib/flussonic
 RUN chmod +x /app/start.sh
 
-EXPOSE 3000 8080 80 1935
+# Only expose the proxy ports, NOT Flussonic's internal port
+EXPOSE 8080 80 1935
 
 CMD ["/app/start.sh"]
